@@ -1,0 +1,16 @@
+{
+  "name": "ceobots-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CORBAN Automation NestJS Monorepo",
+  "workspaces": [
+    "proposta-queue",
+    "rpa-imp-c6",
+    "rpa-imp-workbank"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "start:dev": "npm run start:dev --workspaces",
+    "lint": "npm run lint --workspaces"
+  }
+}

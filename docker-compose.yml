@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: corban-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: corban_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - corban-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: corban-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    networks:
+      - corban-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  proposta-queue:
+    build:
+      context: .
+      dockerfile: proposta-queue/Dockerfile
+    container_name: proposta-queue
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password123
+      - DB_DATABASE=corban_db
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - C6_RPA_URL=http://rpa-imp-c6:3001
+      - CRM_RPA_URL=http://rpa-imp-workbank:3002
+      - QUEUE_SELF_URL=http://proposta-queue:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - corban-network
+
+  rpa-imp-c6:
+    build:
+      context: .
+      dockerfile: rpa-imp-c6/Dockerfile
+    container_name: rpa-imp-c6
+    restart: always
+    ports:
+      - '3001:3001'
+    environment:
+      - PORT=3001
+    networks:
+      - corban-network
+
+  rpa-imp-workbank:
+    build:
+      context: .
+      dockerfile: rpa-imp-workbank/Dockerfile
+    container_name: rpa-imp-workbank
+    restart: always
+    ports:
+      - '3002:3002'
+    environment:
+      - PORT=3002
+      - APIKEY_ANTICAPTCHA=sua_chave_aqui
+    networks:
+      - corban-network
+
+volumes:
+  pgdata:
+
+networks:
+  corban-network:
+    name: corban-network
+    driver: bridge

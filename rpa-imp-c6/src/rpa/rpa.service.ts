@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { StartRpaDto } from './dto/start-rpa.dto';
-import { chromium, firefox, Browser } from 'playwright-extra';
+import { chromium, firefox } from 'playwright-extra';
+import { Browser } from 'playwright';
 import stealth from 'puppeteer-extra-plugin-stealth';
 import * as xlsx from 'xlsx';
 import axios from 'axios';
-import * as FormData from 'form-data';
+import FormData from 'form-data';
 
 // Add the stealth plugin to playwright-extra
 chromium.use(stealth());

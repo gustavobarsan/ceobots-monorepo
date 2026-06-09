@@ -11,6 +11,7 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "start:dev": "npm run start:dev --workspaces",
+    "start:c6": "npm run start:dev --workspace=rpa-imp-c6",
     "lint": "npm run lint --workspaces"
   }
 }

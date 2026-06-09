@@ -24,10 +24,6 @@ export class StartRpaDto {
   @IsOptional()
   headless?: boolean = true;
 
-  @IsString()
-  @IsOptional()
-  dataInicio?: string;
-
   @IsArray()
   @IsString({ each: true })
   @IsOptional()

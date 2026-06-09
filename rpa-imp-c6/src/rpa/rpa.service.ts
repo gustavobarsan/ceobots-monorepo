@@ -17,15 +17,8 @@ export class RpaService {
   private activeBrowsers: Map<string, Browser> = new Map();
 
   async startExtraction(dto: StartRpaDto): Promise<void> {
-    const {
-      usuario,
-      senha,
-      loja,
-      headless,
-      dataInicio,
-      statusImportacao,
-      callbackUrl,
-    } = dto;
+    const { usuario, senha, loja, headless, statusImportacao, callbackUrl } =
+      dto;
     const processId = `${usuario}-${Date.now()}`;
 
     this.logger.log(`Starting RPA for ${usuario} (Process ID: ${processId})`);
@@ -100,12 +93,14 @@ export class RpaService {
       // 4. Filtros e Consulta
       // Assume selectors based on typical asp.net pages, might need adjustment if real HTML is available
       // The specs don't provide exact selectors for dates/status, so we will stub it and proceed to the search button.
-      // If dataInicio is provided:
-      if (dataInicio) {
-        // Wait and fill date
-        // e.g. await page.fill('#txtDataInicio', dataInicio);
-        this.logger.debug(`Aplicando filtro de dataInicio: ${dataInicio}`);
-      }
+      const hoje = new Date();
+      const seteDiasAtras = new Date(hoje);
+      seteDiasAtras.setDate(hoje.getDate() - 7);
+      const dataInicioDefault = seteDiasAtras.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+      // Wait and fill date
+      // e.g. await page.fill('#txtDataInicio', dataInicioDefault);
+      this.logger.debug(`Aplicando filtro de dataInicio: ${dataInicioDefault}`);
 
       if (statusImportacao && statusImportacao.length > 0) {
         // Select status

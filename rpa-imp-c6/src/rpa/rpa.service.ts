@@ -8,8 +8,12 @@ import axios from 'axios';
 import FormData from 'form-data';
 
 // Add the stealth plugin to playwright-extra
-chromium.use(stealth());
-firefox.use(stealth());
+const stealthPlugin = stealth() as any;
+if (stealthPlugin.enabledEvasions) {
+  stealthPlugin.enabledEvasions.delete('user-agent-override');
+}
+chromium.use(stealthPlugin);
+firefox.use(stealthPlugin);
 
 @Injectable()
 export class RpaService {
@@ -27,6 +31,7 @@ export class RpaService {
     try {
       browser = await firefox.launch({
         headless: headless ?? true,
+        slowMo: 2000,
       });
 
       this.activeBrowsers.set(processId, browser);
@@ -34,8 +39,17 @@ export class RpaService {
       const context = await browser.newContext();
       const page = await context.newPage();
 
+      // Handle confirmation dialog (e.g. "Usuário já autenticado em outra estação...")
+      page.on('dialog', async (dialog: any) => {
+        this.logger.log(`Dialog detected [${dialog.type()}]: "${dialog.message()}"`);
+        await dialog.accept();
+        this.logger.log('Dialog auto-accepted successfully.');
+      });
+
       // 1. Acesso Inicial
-      await page.goto('https://www.c6consig.com.br/');
+      await page.goto(
+        'https://c6.c6consig.com.br/WebAutorizador/Login/AC.UI.LOGIN.aspx?FISession=be757aff9935',
+      );
 
       // 2. Login
       await page.waitForSelector('#EUsuario_CAMPO');
@@ -87,7 +101,7 @@ export class RpaService {
         }
       }
 
-      const consultaUrl = `https://www.c6consig.com.br/WebAutorizador/MenuWeb/Esteira/AprovacaoConsulta/UI.AprovacaoConsultaAnd.aspx?FISession=${sessionToken}`;
+      const consultaUrl = `https://c6.c6consig.com.br/WebAutorizador/MenuWeb/Esteira/AprovacaoConsulta/UI.AprovacaoConsultaAnd.aspx?FISession=${sessionToken}`;
       await page.goto(consultaUrl);
 
       // 4. Filtros e Consulta
@@ -214,6 +228,17 @@ export class RpaService {
       const wb = xlsx.utils.book_new();
       xlsx.utils.book_append_sheet(wb, ws, 'Dados');
       const excelBuffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+      // Save a local copy of the spreadsheet in the workspace for local debug/verification
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const debugPath = path.join(process.cwd(), `extracao_c6_${loja}_debug.xlsx`);
+        fs.writeFileSync(debugPath, excelBuffer);
+        this.logger.log(`[Debug] Cópia local da planilha salva em: ${debugPath}`);
+      } catch (debugErr: any) {
+        this.logger.error(`[Debug] Falha ao salvar cópia local: ${debugErr.message}`);
+      }
 
       // 7. Disparo do Callback
       const formData = new FormData();

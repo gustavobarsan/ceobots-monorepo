@@ -50,24 +50,34 @@ const puppeteer_extra_plugin_stealth_1 = __importDefault(require("puppeteer-extr
 const xlsx = __importStar(require("xlsx"));
 const axios_1 = __importDefault(require("axios"));
 const form_data_1 = __importDefault(require("form-data"));
-playwright_extra_1.chromium.use((0, puppeteer_extra_plugin_stealth_1.default)());
-playwright_extra_1.firefox.use((0, puppeteer_extra_plugin_stealth_1.default)());
+const stealthPlugin = (0, puppeteer_extra_plugin_stealth_1.default)();
+if (stealthPlugin.enabledEvasions) {
+    stealthPlugin.enabledEvasions.delete('user-agent-override');
+}
+playwright_extra_1.chromium.use(stealthPlugin);
+playwright_extra_1.firefox.use(stealthPlugin);
 let RpaService = RpaService_1 = class RpaService {
     logger = new common_1.Logger(RpaService_1.name);
     activeBrowsers = new Map();
     async startExtraction(dto) {
-        const { usuario, senha, loja, headless, dataInicio, statusImportacao, callbackUrl, } = dto;
+        const { usuario, senha, loja, headless, statusImportacao, callbackUrl } = dto;
         const processId = `${usuario}-${Date.now()}`;
         this.logger.log(`Starting RPA for ${usuario} (Process ID: ${processId})`);
         let browser = null;
         try {
             browser = await playwright_extra_1.firefox.launch({
                 headless: headless ?? true,
+                slowMo: 2000,
             });
             this.activeBrowsers.set(processId, browser);
             const context = await browser.newContext();
             const page = await context.newPage();
-            await page.goto('https://www.c6consig.com.br/');
+            page.on('dialog', async (dialog) => {
+                this.logger.log(`Dialog detected [${dialog.type()}]: "${dialog.message()}"`);
+                await dialog.accept();
+                this.logger.log('Dialog auto-accepted successfully.');
+            });
+            await page.goto('https://c6.c6consig.com.br/WebAutorizador/Login/AC.UI.LOGIN.aspx?FISession=be757aff9935');
             await page.waitForSelector('#EUsuario_CAMPO');
             await page.fill('#EUsuario_CAMPO', usuario);
             await page.waitForSelector('#ESenha_CAMPO');
@@ -104,11 +114,13 @@ let RpaService = RpaService_1 = class RpaService {
                     throw new Error('Não foi possível encontrar o token FISession');
                 }
             }
-            const consultaUrl = `https://www.c6consig.com.br/WebAutorizador/MenuWeb/Esteira/AprovacaoConsulta/UI.AprovacaoConsultaAnd.aspx?FISession=${sessionToken}`;
+            const consultaUrl = `https://c6.c6consig.com.br/WebAutorizador/MenuWeb/Esteira/AprovacaoConsulta/UI.AprovacaoConsultaAnd.aspx?FISession=${sessionToken}`;
             await page.goto(consultaUrl);
-            if (dataInicio) {
-                this.logger.debug(`Aplicando filtro de dataInicio: ${dataInicio}`);
-            }
+            const hoje = new Date();
+            const seteDiasAtras = new Date(hoje);
+            seteDiasAtras.setDate(hoje.getDate() - 7);
+            const dataInicioDefault = seteDiasAtras.toISOString().split('T')[0];
+            this.logger.debug(`Aplicando filtro de dataInicio: ${dataInicioDefault}`);
             if (statusImportacao && statusImportacao.length > 0) {
                 this.logger.debug(`Aplicando filtro de status: ${statusImportacao.join(', ')}`);
             }
@@ -181,6 +193,16 @@ let RpaService = RpaService_1 = class RpaService {
             const wb = xlsx.utils.book_new();
             xlsx.utils.book_append_sheet(wb, ws, 'Dados');
             const excelBuffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const debugPath = path.join(process.cwd(), `extracao_c6_${loja}_debug.xlsx`);
+                fs.writeFileSync(debugPath, excelBuffer);
+                this.logger.log(`[Debug] Cópia local da planilha salva em: ${debugPath}`);
+            }
+            catch (debugErr) {
+                this.logger.error(`[Debug] Falha ao salvar cópia local: ${debugErr.message}`);
+            }
             const formData = new form_data_1.default();
             formData.append('arquivo', excelBuffer, {
                 filename: `extracao_c6_${loja}_${Date.now()}.xlsx`,

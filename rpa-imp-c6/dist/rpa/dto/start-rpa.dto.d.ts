@@ -3,7 +3,6 @@ export declare class StartRpaDto {
     senha: string;
     loja: string;
     headless?: boolean;
-    dataInicio?: string;
     statusImportacao?: string[];
     callbackUrl: string;
 }

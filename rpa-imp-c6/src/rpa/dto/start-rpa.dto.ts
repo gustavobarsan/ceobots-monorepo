@@ -29,7 +29,7 @@ export class StartRpaDto {
   @IsOptional()
   statusImportacao?: string[];
 
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   @IsNotEmpty()
   callbackUrl!: string;
 }

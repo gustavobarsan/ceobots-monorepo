@@ -16,7 +16,6 @@ class StartRpaDto {
     senha;
     loja;
     headless = true;
-    dataInicio;
     statusImportacao;
     callbackUrl;
 }
@@ -42,18 +41,13 @@ __decorate([
     __metadata("design:type", Boolean)
 ], StartRpaDto.prototype, "headless", void 0);
 __decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], StartRpaDto.prototype, "dataInicio", void 0);
-__decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsString)({ each: true }),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], StartRpaDto.prototype, "statusImportacao", void 0);
 __decorate([
-    (0, class_validator_1.IsUrl)(),
+    (0, class_validator_1.IsUrl)({ require_tld: false }),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], StartRpaDto.prototype, "callbackUrl", void 0);

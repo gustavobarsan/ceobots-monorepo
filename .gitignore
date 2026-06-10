@@ -1,1 +1,7 @@
 node_modules
+.env
+*.csv
+*.xls
+*.xlsx
+*.http
+dist

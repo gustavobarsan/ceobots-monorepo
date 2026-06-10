@@ -3,8 +3,8 @@ import { Proposta } from '../../db/entities/proposta.entity';
 
 export class C6Mapper implements PropostaMapper {
   mapRow(row: Record<string, any>): Partial<Proposta> {
-    const cliente = row['Cliente'] || row['Nome'] || row['Nome do Cliente'] || '';
-    const valorRaw = row['Valor'] || row['Vl. Operação'] || row['Vl. Contrato'] || '';
+    const cliente = row['Cliente'] || row['Nome'] || row['Nome do Cliente'] || row['CLIENTE'] || row['NOME'] || '';
+    const valorRaw = row['Valor'] || row['Vl. Operação'] || row['Vl. Contrato'] || row['VALOR SOLICITADO'] || row['VALOR'] || '';
 
     let valor = 0;
     if (typeof valorRaw === 'number') {
@@ -17,7 +17,7 @@ export class C6Mapper implements PropostaMapper {
       }
     }
 
-    const produto = row['Operação'] || row['Produto'] || 'Consignado';
+    const produto = row['Operação'] || row['Produto'] || row['MODALIDADE'] || row['CONVENIO'] || 'Consignado';
 
     return {
       cliente: cliente.toString(),

@@ -11,6 +11,7 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "start:dev": "npm run start:dev --workspaces",
+    "start:queue": "npm run start:dev --workspace=proposta-queue",
     "lint": "npm run lint --workspaces"
   }
 }
